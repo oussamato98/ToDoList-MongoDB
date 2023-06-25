@@ -26,6 +26,17 @@ const item3 = new Item({ name: "<-- Hit this to delete an item" });
 const defaultItems = [item1, item2, item3];
 
 
+const listSchema = new mongoose.Schema({
+  name: String,
+  items: [itemSchema] 
+});
+
+const List = mongoose.model("List", listSchema);
+
+
+
+
+
 
 // to handle the resolved promise use then
 // Item.insertMany(defaultItems)
@@ -99,10 +110,30 @@ app.post("/delete",function(req,res){
   
 });
 
+app.get("/:id", function (req, res) {
 
-app.get("/work", function (req, res) {
-  res.render("list", { listTitle: "Work List", newListItems: workItems });
-});
+  const requiredName = req.params.id;
+
+  List.find({ name: requiredName })
+    .then((result) => {
+
+      if (result.length === 0) {
+        const list = new List({ name: requiredName, items: defaultItems });
+        list.save();
+        res.redirect("/" + requiredName);
+      }
+      else {
+        result.forEach((e) => res.render("list", { listTitle: e.name, newListItems: e.items })
+        );
+      }
+    })
+    .catch((error) => {
+      console.error("Error ", error);
+    });
+
+})
+
+
 
 app.get("/about", function (req, res) {
   res.render("about");
