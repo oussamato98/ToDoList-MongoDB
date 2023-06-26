@@ -3,6 +3,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
+const _ = require('lodash');
 
 const app = express();
 
@@ -68,7 +69,7 @@ app.get("/", function (req, res) {
 
 app.post("/", function (req, res) {
 
-  const itemName = req.body.list;
+  const itemName = _.lowerCase(req.body.list);
   const itemContent = req.body.newItem;
 
   const item = new Item({ name: itemContent });
@@ -98,28 +99,50 @@ app.post("/", function (req, res) {
 });
 
 
-app.post("/delete",function(req,res){
-  const inputCheck = req.body.checkboxInput;
-  console.log(inputCheck);
+app.post("/delete", function (req, res) {
 
-  Item.deleteOne({_id:inputCheck })
-.then((result) => {
-  console.log("Documents deleted");
-  res.redirect("/");
-})
-.catch((error) => {
-  console.error("Error deleting documents:", error);
+  const checkboxInput = req.body.checkboxInput;
+
+  const values = checkboxInput.split('|');
+  const itemId = values[0];
+  console.log(itemId);
+  const listName = _.lowerCase(values[1]);
+  console.log(listName);
+
+  if(listName === "Today")
+  {
+    Item.findByIdAndRemove({ _id: itemId })
+      .then((result) => {
+        console.log("Documents deleted");
+        res.redirect("/");
+      })
+      .catch((error) => {
+        console.error("Error deleting documents:", error);
+      });
+
+  }
+
+  else {
+
+    // update an array inside an object 
+
+    List.findOneAndUpdate({ name: listName},{$pull: {items: { _id: itemId }}})
+    .then((result) => {
+      console.log("Documents deleted");
+      res.redirect("/"+listName+"");
+        })
+    .catch((error) => {
+      console.error("Error deleting documents:", error);
+    });
+   }
 });
-
-
-
-
-  
-});
+ 
 
 app.get("/:id", function (req, res) {
 
-  const requiredName = req.params.id;
+  const requiredName = _.lowerCase(req.params.id); 
+
+
 
   List.find({ name: requiredName })
     .then((result) => {
@@ -130,7 +153,7 @@ app.get("/:id", function (req, res) {
         res.redirect("/" + requiredName);
       }
       else {
-        result.forEach((e) => res.render("list", { listTitle: e.name, newListItems: e.items })
+        result.forEach((e) => res.render("list", { listTitle: _.upperFirst(e.name), newListItems: e.items })
         );
       }
     })
