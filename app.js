@@ -33,20 +33,6 @@ const listSchema = new mongoose.Schema({
 
 const List = mongoose.model("List", listSchema);
 
-
-
-
-
-
-// to handle the resolved promise use then
-// Item.insertMany(defaultItems)
-// .then((result) => {
-//   console.log("Documents inserted successfully:", result);
-// })
-// .catch((error) => {
-//   console.error("Error inserting documents:", error);
-// });
-
 const items = [];
 
 app.get("/", function (req, res) {
@@ -82,14 +68,35 @@ app.get("/", function (req, res) {
 
 app.post("/", function (req, res) {
 
-  const itemName = req.body.newItem;
-  console.log(itemName);
-  const item = new Item({ name: itemName });
-  item.save();
-  res.redirect("/");
+  const itemName = req.body.list;
+  const itemContent = req.body.newItem;
+
+  const item = new Item({ name: itemContent });
+
+  if(itemName=== "Today"){
+    item.save();
+    res.redirect("/");
+  }
+  else {
+    List.updateOne(
+      { name: itemName }, // Filter to find the document to update
+      { $push: { items: item } } // Update to add the new item to the items array
+    )
+      .then(() => {
+        console.log('Item added to the list successfully.');
+      })
+      .catch(error => {
+        console.error('Error updating the list:', error);
+      });
+  
+     res.redirect("/"+itemName);
+  }
+
+
 
 
 });
+
 
 app.post("/delete",function(req,res){
   const inputCheck = req.body.checkboxInput;
